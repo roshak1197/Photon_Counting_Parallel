@@ -18,11 +18,22 @@ RUN useradd -ms /bin/bash geant
 ENV PASSWORD=Feynman2024
 RUN echo "geant:$PASSWORD" | chpasswd
 RUN usermod -aG sudo geant
-RUN echo "pheno ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers 
+RUN echo "geant ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers 
 #añadir ssh
-RUN apt install -y openssh-server curl python-is-python3 gedit
-RUN  echo "X11Forwarding yes" >> /etc/ssh/sshd_config
+RUN apt install -y openssh-server curl python-is-python3 gedit unzip
+RUN echo "X11Forwarding yes" >> /etc/ssh/sshd_config
+RUN ssh-keygen -A
+RUN sed -i 's/#X11UseLocalhost yes/X11UseLocalhost no/g' /etc/ssh/sshd_config
+# add jupyter
+RUN apt install -y git curl python3.10-venv
 USER geant 
 RUN cp -r /usr/local/geant4/geant4-v11.1.2/examples ~/geant4-examples
-RUN  sudo ssh-keygen -A
-RUN  sudo sed -i 's/#X11UseLocalhost yes/X11UseLocalhost no/g' /etc/ssh/sshd_config
+# create a env of python
+RUN python -m venv /home/geant/.env
+RUN /home/geant/.env/bin/pip install --upgrade pip
+RUN /home/geant/.env/bin/pip install numpy scipy matplotlib pandas jupyterlab opencv-python
+COPY PEPI2-main.zip /home/geant/PEPI2-main.zip 
+WORKDIR /home/geant/
+RUN unzip PEPI2-main.zip
+COPY entrypoint.sh /home/geant/entrypoint.sh
+ENTRYPOINT ["/home/geant/entrypoint.sh"]
